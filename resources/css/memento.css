@@ -1,0 +1,13 @@
+#preview {
+display: -webkit-box;
+-webkit-box-orient: vertical;
+-webkit-box-pack: center;
+border: thin black dotted
+}
+#preview > div {
+display: -webkit-box;
+-webkit-box-orient: horizontal;
+ -webkit-box-pack: center;
+}
+#preview > div > p { -webkit-box-flex: 1 }
+
