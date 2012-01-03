@@ -14,6 +14,12 @@ Flag development
   Description: Whether to build the server in development (interpreted) mode
   Default: False
 
+Library
+  build-depends: base,
+                 curl
+  exposed-modules: Network.Rackspace.CloudAPI
+  hs-source-dirs: src
+
 Executable memento
   hs-source-dirs: src
   main-is: Main.hs
@@ -21,8 +27,10 @@ Executable memento
   Build-depends:
     base >= 4 && < 5,
     bytestring,
+    pureMD5,
     snap-core,
-    snap-server
+    snap-server,
+    transformers
 
   if flag(development)
     cpp-options: -DDEVELOPMENT

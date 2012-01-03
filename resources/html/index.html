@@ -2,19 +2,26 @@
 <html>
   <head>
     <link rel="stylesheet" type="text/css" href="css/memento.css" />
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css"
+          href="http://plupload.com/plupload/js/jquery.plupload.queue/css/jquery.plupload.queue.css" />
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript" src="http://plupload.com/plupload/js/plupload.full.js"></script>
+    <script type="text/javascript" src="http://plupload.com/plupload/js/jquery.plupload.queue/jquery.plupload.queue.js"></script>
     <script type="text/javascript" src="js/memento.js" >
     </script>
     <title>Memento: Upload images for storage.</title>
   </head>
   <body>
-    <form>
+    <div id='uploader' />
+    <!--
+    <form action="upload" enctype="multipart/form-data" method="POST">
     <label for="shoot">Shoot Label</label><input type="textbox" name="shoot" id="shoot" />
     <input type="file" id="files" name="files[]" multiple />
-    <input type="submit" id="submit" />
+    <input id="submit" type="submit" />
     </form>
       <div id="preview">
         <div><p>File</p><p>Shoot</p></div>
       </div>
+    -->
   </body>
 </html>
