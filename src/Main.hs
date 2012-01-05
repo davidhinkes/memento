@@ -13,8 +13,8 @@ import Snap.Util.FileUploads
 
 import Network.Rackspace.CloudAPI
 
-static_files :: Snap ()
-static_files = do
+staticFiles :: Snap ()
+staticFiles = do
   let index = path (fromString "") $ sendFile "resources/html/index.html"
   let resources = serveDirectory "resources"
   index <|> resources
@@ -37,7 +37,7 @@ upload = handleFileUploads
   "."
   (setMaximumFormInputSize size defaultUploadPolicy)
   (\_ -> allowWithMaximumSize size)
-  (\fs -> liftIO $ msum $ map f' fs)
+  (liftIO . msum . (map f'))
   where f' (part_info, Right path) = archive path
         f' _ = return ()
         size = 50*1024*1024
@@ -47,5 +47,5 @@ main = do
   auth_token <- getAuthToken ("davidhinkes", "5fac51fe3cc8d642db525aedf34c5134")
   case auth_token of
     Nothing -> return ()
-    Just token -> putStrLn . show $ token
-  quickHttpServe $ (static_files <|> (path (fromString "upload") upload) <|> app)
+    Just token -> print token
+  quickHttpServe $ staticFiles <|> path (fromString "upload") upload <|> app
