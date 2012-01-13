@@ -1,16 +1,19 @@
 module Main where
+
 import Control.Applicative
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Lazy as LB
-import Data.String
-import Data.Digest.Pure.MD5
+import qualified Data.ByteString.Lazy as B
 import Control.Monad (msum)
 import Control.Monad.IO.Class (liftIO)
+import Data.Digest.Pure.MD5
+import Data.String
+import Data.Serialize.Get
+import Data.Word
 import Snap.Core
 import Snap.Http.Server
-import Snap.Util.FileServe (serveDirectory, serveFile)
+import Snap.Util.FileServe (serveDirectory)
 import Snap.Util.FileUploads
 
+import Graphics.CR2
 import Network.Rackspace.CloudAPI
 
 staticFiles :: Snap ()
@@ -21,16 +24,21 @@ staticFiles = do
 
 app :: Snap ()
 app = do
-  msg_param <- getParam $ fromString "msg"
-  case msg_param of
-    Just value -> writeBS $ B.concat [ fromString "You said: ", value ]
-    _ -> writeLBS $ fromString "You said nothing"
+  return ()
 
 archive :: FilePath -> IO ()
 archive file_path = do
-  file_contents <- LB.readFile file_path
+  file_contents <- B.readFile file_path
+  let (Right attrs) = runGetLazy getCR2Attributes file_contents
   let md5_digest = show $ md5 file_contents
-  putStrLn md5_digest
+  auth_token <- getAuthorization ("davidhinkes", "5fac51fe3cc8d642db525aedf34c5134")
+  case auth_token of
+    Nothing -> print "Authorization failed."
+    Just token -> do
+                    let container = "testcontainer2"
+                    createContainer token container
+                    createFile token container md5_digest file_contents attrs
+                    return ()
 
 upload :: Snap ()
 upload = handleFileUploads
@@ -44,8 +52,5 @@ upload = handleFileUploads
 
 main :: IO ()
 main = do
-  auth_token <- getAuthToken ("davidhinkes", "5fac51fe3cc8d642db525aedf34c5134")
-  case auth_token of
-    Nothing -> return ()
-    Just token -> print token
   quickHttpServe $ staticFiles <|> path (fromString "upload") upload <|> app
+

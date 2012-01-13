@@ -16,18 +16,23 @@ Flag development
 
 Library
   build-depends: base,
-                 curl
-  exposed-modules: Network.Rackspace.CloudAPI
+                 bytestring,
+                 cereal,
+                 convertible,
+                 curl,
+                 pureMD5
+  exposed-modules: Network.Rackspace.CloudAPI,
+                   Graphics.CR2
   hs-source-dirs: src
 
 Executable memento
   hs-source-dirs: src
   main-is: Main.hs
-
   Build-depends:
     base >= 4 && < 5,
     bytestring,
     pureMD5,
+    MissingH,
     snap-core,
     snap-server,
     transformers
@@ -42,9 +47,9 @@ Executable memento
     ghc-options: -threaded -w
   else
     if impl(ghc >= 6.12.0)
-      ghc-options: -threaded -Wall -fwarn-tabs -funbox-strict-fields -O2
+      ghc-options: -threaded -Wall -fwarn-tabs -funbox-strict-fields
                    -fno-warn-orphans -fno-warn-unused-do-bind
     else
-      ghc-options: -threaded -Wall -fwarn-tabs -funbox-strict-fields -O2
+      ghc-options: -threaded -Wall -fwarn-tabs -funbox-strict-fields
                    -fno-warn-orphans
 

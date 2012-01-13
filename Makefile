@@ -1,8 +1,10 @@
-all: configure build
+all: build
 	cabal build
 configure:
 	cabal configure
-build:
+build: configure
 	cabal build
-run: all	
+run: build
 	dist/build/memento/memento
+clean:
+	cabal clean
