@@ -29,13 +29,17 @@ Executable memento
   hs-source-dirs: src
   main-is: Main.hs
   Build-depends:
+    authenticate,
     base >= 4 && < 5,
     bytestring,
+    containers,
     pureMD5,
     MissingH,
     snap-core,
     snap-server,
-    transformers
+    text,
+    transformers,
+    utf8-string
 
   if flag(development)
     cpp-options: -DDEVELOPMENT
