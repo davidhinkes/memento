@@ -9,6 +9,7 @@ import Data.Maybe
 import Data.String
 import Data.Serialize.Get
 import Data.Word
+import Util
 
 data Endian = BigEndian | LittleEndian
 
@@ -25,7 +26,7 @@ e32 endian = case endian of
 getCR2Endian :: Get Endian
 getCR2Endian = do
   endian_indicator <- getLazyByteString 2
-  case (bs2str endian_indicator) of
+  case (lbs2s endian_indicator) of
     "II" -> return LittleEndian
     "MM" -> return BigEndian
     _ -> error $ "Expected endian indicator.  Got: " ++ (show endian_indicator)
@@ -54,28 +55,25 @@ getCR2Tags endian = do
 
 type CR2Attribute = (String, String)
 
-bs2str :: B.ByteString -> String
-bs2str bs = map w2c $ B.unpack bs
-
 convertTagToAttribute :: CR2Tag -> Maybe (Get CR2Attribute)
 convertTagToAttribute (306, _, n, offset) = Just $ do
   skip (fromInteger $ toInteger offset)
   date <- getLazyByteString $ fromInteger $ toInteger (n-1)
-  return ("Date", bs2str date)
+  return ("Date", lbs2s date)
 convertTagToAttribute (271, _, n, offset) = Just $ do
   skip (fromInteger $ toInteger offset)
   make <- getLazyByteString $ fromInteger $ toInteger (n-1)
-  return ("Make", bs2str make)
+  return ("Make", lbs2s make)
 convertTagToAttribute (272, _, n, offset) = Just $ do
   skip (fromInteger $ toInteger offset)
   make <- getLazyByteString $ fromInteger $ toInteger (n-1)
-  return ("Model", bs2str make)
+  return ("Model", lbs2s make)
 convertTagToAttribute _ = Nothing
 -- Nothing passes here
 convertTagToAttribute (tag, 2, n, offset) = Just $ do
   skip (fromInteger $ toInteger offset)
   str <- getLazyByteString $ fromInteger $ toInteger (n-1)
-  return (show tag, bs2str str)
+  return (show tag, lbs2s str)
 convertTagToAttribute (tag, _, n, offset) = Just $ do
   return (show tag, "DEBUG")
 

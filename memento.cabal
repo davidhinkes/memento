@@ -20,7 +20,8 @@ Library
                  cereal,
                  convertible,
                  curl,
-                 pureMD5
+                 pureMD5,
+                 utf8-string
   exposed-modules: Network.Rackspace.CloudAPI,
                    Graphics.CR2
   hs-source-dirs: src
@@ -38,8 +39,7 @@ Executable memento
     snap-core,
     snap-server,
     text,
-    transformers,
-    utf8-string
+    transformers
 
   if flag(development)
     cpp-options: -DDEVELOPMENT
@@ -56,4 +56,7 @@ Executable memento
     else
       ghc-options: -threaded -Wall -fwarn-tabs -funbox-strict-fields
                    -fno-warn-orphans
-
+Executable tests
+  main-is: tests.hs
+  hs-source-dirs: src
+  build-depends: base, HUnit

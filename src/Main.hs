@@ -6,7 +6,6 @@ import Control.Applicative
 import Control.Exception
 import qualified Data.ByteString.Lazy as B
 import qualified Data.ByteString as BS
-import Data.ByteString.Internal (w2c)
 import Control.Monad (msum)
 import Control.Monad.IO.Class (liftIO)
 import Data.Digest.Pure.MD5
@@ -24,9 +23,7 @@ import Web.Authenticate.OpenId.Providers
 
 import Graphics.CR2
 import Network.Rackspace.CloudAPI
-
-bs2s :: BS.ByteString -> String
-bs2s bs = map w2c $ BS.unpack bs
+import Util
 
 staticFiles :: Snap ()
 staticFiles = do
@@ -56,11 +53,9 @@ archive id file_path = do
 maybeIdentifier :: [(T.Text,T.Text)] -> IO (Maybe String)
 maybeIdentifier p =
   Control.Exception.catch getId ex
-  where ex (e :: AuthenticateException) = return Nothing
+  where ex (_ :: AuthenticateException) = return Nothing
         getId = do
           (id, _) <- authenticate p
-          putStrLn $ "id (show): " ++ (show id)
-          putStrLn $ "id (identity): " ++ (show $ identifier $ id)
           let hash = md5 $ fromString $ show id
           return $ Just $ show hash
 
@@ -75,7 +70,7 @@ loginProtect action = do
       url <- getsRequest extractURL
       params <- getsRequest rqParams
       let params' = toList params
-      let params'' = map (\(k,v) -> (fromString $ bs2s k, fromString $ bs2s $ head v)) params' :: [(T.Text,T.Text)]
+      let params'' = map (\(k,v) -> (fromString $ bs2s k, fromString . bs2s . head $ v)) params' :: [(T.Text,T.Text)]
       id <- liftIO $ maybeIdentifier params''
       case id of
         Just id' -> do
@@ -87,7 +82,7 @@ loginProtect action = do
           -- Redirect to login service.
           r <- liftIO $ getForwardUrl (fromString google) (fromString url) Nothing []
           redirect $ fromString $ T.unpack r
-  where extractURL r = "http://" ++ (bs2s $ rqServerName r) ++ ":" ++ (show $ rqServerPort r) ++ (bs2s $ rqURI r)
+  where extractURL r = "http://" ++ (bs2s $ rqServerName r) ++ ":" ++ (show . rqServerPort $ r) ++ (bs2s . rqURI $ r)
         cookie_id_name = "id"
 
 upload :: String -> Snap ()
