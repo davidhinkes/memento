@@ -1,9 +1,12 @@
 module Network.Rackspace.CloudAPI
   (
+  Authorization,
+  Container,
   createContainer,
   createFile,
   getAuthorization,
   getContainers,
+  getFileList,
   ) where
 
 import qualified Data.ByteString.Lazy as B
@@ -36,13 +39,10 @@ getAuthorization (account, key) = do
   resp <- curlGetResponse "https://auth.api.rackspacecloud.com/v1.0" [CurlHttpHeaders headers]
   return $ pullHeaders $ respHeaders resp
   where pullHeaders xs = do
-          content <- pullHeadersValue xs "X-Storage-Url"
-          cdn <- pullHeadersValue xs "X-CDN-Management-Url"
-          token <- pullHeadersValue xs "X-Auth-Token"
+          content <- lookup "X-Storage-Url" xs
+          cdn <- lookup "X-CDN-Management-Url" xs
+          token <- lookup"X-Auth-Token" xs
           return $ Authorization (cdn, content, token)
-        pullHeadersValue ((k,v):_) z | k == z = Just $ strip v
-        pullHeadersValue (_:xs) z = pullHeadersValue xs z
-        pullHeadersValue [] _ = Nothing
 
 getContainers :: Authorization -> IO [Container]
 getContainers auth = do
@@ -54,12 +54,12 @@ getContainers auth = do
 
 createContainer :: Authorization -> String -> IO Bool
 createContainer auth container_name = do
- let Authorization (_, content_url, token) = auth
- let headers = [ "X-Auth-Token: " ++ token ]
- let url = content_url ++ "/" ++ container_name
- resp <- curlGetResponse url [CurlHttpHeaders headers,
-                              CurlPut True]
- return (respStatus resp == 201)
+  let Authorization (_, content_url, token) = auth
+  let headers = [ "X-Auth-Token: " ++ token ]
+  let url = content_url ++ "/" ++ container_name
+  resp <- curlGetResponse url [CurlHttpHeaders headers,
+                               CurlPut True]
+  return (respStatus resp == 201)
 
 createFile :: Authorization -> Container -> String -> B.ByteString -> [(String, String)] -> IO Bool
 createFile auth container file_name file_contents meta_data = do
@@ -78,7 +78,16 @@ createFile auth container file_name file_contents meta_data = do
   return (respStatus resp == 201)
   where formatMetaData (a,b) = ("X-Object-Meta-" ++ a ++ ": " ++ b)
 
--- Function for reading byte string into ptr.
+getFileList :: Authorization -> Container -> String -> IO [ String ]
+getFileList auth container path = do
+  let Authorization (_, content_url, token) = auth
+  let headers = [ "X-Auth-Token: " ++ token ]
+  let url = content_url ++ "/" ++ container ++ "?path=" ++ path
+  resp <- curlGetResponse url [CurlHttpHeaders headers]
+  let contents = respBody resp
+  return $ filter ((/=) "") $ split "\n" contents
+
+-- Helper function for reading byte string into ptr.
 readFunction :: B.ByteString -> IORef Integer -> ReadFunction
 readFunction content state = (\ptr width num _ -> do
   bytes_already_read <- readIORef state

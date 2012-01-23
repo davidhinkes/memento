@@ -18,6 +18,7 @@ import Snap.Core
 import Snap.Http.Server
 import Snap.Util.FileServe (serveDirectory)
 import Snap.Util.FileUploads
+import Text.JSON
 import Web.Authenticate.OpenId
 import Web.Authenticate.OpenId.Providers
 
@@ -31,9 +32,12 @@ staticFiles = do
   let resources = serveDirectory "resources"
   (loginProtect (\id -> index)) <|> resources
 
-app :: Snap ()
-app = do
-  return ()
+-- Helper const values.
+authIO :: IO (Maybe Authorization)
+authIO = getAuthorization ("davidhinkes", "5fac51fe3cc8d642db525aedf34c5134")
+
+container :: Container
+container = "memento"
 
 archive :: String -> FilePath -> IO ()
 archive id file_path = do
@@ -41,14 +45,25 @@ archive id file_path = do
   let (Right attrs) = runGetLazy getCR2Attributes file_contents
   let md5_digest = show $ md5 file_contents
   let cloud_name = id ++ "/" ++ md5_digest
-  auth_token <- getAuthorization ("davidhinkes", "5fac51fe3cc8d642db525aedf34c5134")
+  auth_token <- authIO
   case auth_token of
     Nothing -> print "Authorization failed."
     Just token -> do
-                    let container = "memento"
                     createContainer token container
                     createFile token container cloud_name file_contents attrs
                     return ()
+
+status :: String -> Snap ()
+status who = do
+  files <- liftIO status'
+  modifyResponse $ setContentType (fromString "test/json")
+  writeText $ fromString $ encode $ showJSON files
+  return () where
+    status' = do
+      a <- authIO
+      case a of
+        Nothing -> return []
+        Just auth -> getFileList auth container who
 
 maybeIdentifier :: [(T.Text,T.Text)] -> IO (Maybe String)
 maybeIdentifier p =
@@ -98,5 +113,7 @@ upload id = do
 
 main :: IO ()
 main = do
-  quickHttpServe $ staticFiles <|> path (fromString "upload") (loginProtect (\r -> upload r)) <|> app
-
+  quickHttpServe $ staticFiles <|> route [
+    (fromString "upload", loginProtect (\r -> upload r)),
+    (fromString "status", loginProtect (\r -> status r))
+    ]
