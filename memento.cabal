@@ -21,8 +21,10 @@ Library
                  convertible,
                  curl,
                  pureMD5,
+                 mtl,
                  utf8-string
   exposed-modules: Network.Rackspace.CloudAPI,
+                   Network.Rackspace.CloudAPI.Mock,
                    Graphics.CR2
   hs-source-dirs: src
 

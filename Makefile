@@ -2,7 +2,7 @@ all: build
 	cabal build
 configure:
 	cabal --enable-tests configure
-build: configure
+build:
 	cabal build
 tests: build
 	dist/build/tests/tests

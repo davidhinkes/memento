@@ -1,7 +1,9 @@
 module Network.Rackspace.CloudAPI
   (
-  Authorization,
+  Authorization(Authorization),
+  CloudAPI,
   Container,
+  MetaData,
   createContainer,
   createFile,
   getAuthorization,
@@ -23,64 +25,72 @@ type AccountAPIKey = String
 type CDNURL = String
 type StorageURL = String
 type AuthToken = String
+type Container = String
+type MetaData = [(String, String)]
 newtype Authorization = Authorization (CDNURL, StorageURL, AuthToken)
   deriving (Show)
 
-type Container = String
+class Monad m => CloudAPI m where
+  getAuthorization :: (AccountName, AccountAPIKey) -> m (Maybe Authorization)
+  getContainers :: Authorization -> m [Container]
+  createContainer :: Authorization -> Container -> m Bool
+  createFile :: Authorization -> Container -> String -> B.ByteString -> MetaData -> m Bool
+  getFileList :: Authorization -> Container -> String -> m [ String ]
 
-getAuthorization :: (AccountName, AccountAPIKey) -> IO (Maybe Authorization)
-getAuthorization (account, key) = do
-  let headers = ["X-Auth-User: " ++ account, "X-Auth-Key: " ++ key]
-  resp <- curlGetResponse "https://auth.api.rackspacecloud.com/v1.0" [CurlHttpHeaders headers]
-  return $ pullHeaders $ respHeaders resp
-  where pullHeaders xs = do
-          storage <- lookup "X-Storage-Url" xs
-          cdn <- lookup "X-CDN-Management-Url" xs
-          token <- lookup"X-Auth-Token" xs
-          return $ Authorization (cdn, storage, token)
+instance CloudAPI IO where
+  --getAuthorization :: (AccountName, AccountAPIKey) -> IO (Maybe Authorization)
+  getAuthorization (account, key) = do
+    let headers = ["X-Auth-User: " ++ account, "X-Auth-Key: " ++ key]
+    resp <- curlGetResponse "https://auth.api.rackspacecloud.com/v1.0" [CurlHttpHeaders headers]
+    return $ pullHeaders $ respHeaders resp
+    where pullHeaders xs = do
+            storage <- lookup "X-Storage-Url" xs
+            cdn <- lookup "X-CDN-Management-Url" xs
+            token <- lookup"X-Auth-Token" xs
+            return $ Authorization (cdn, storage, token)
 
-getContainers :: Authorization -> IO [Container]
-getContainers auth = do
-  let Authorization (_, content_url, token) = auth
-  let headers = [ "X-Auth-Token: " ++ token ]
-  let url = content_url
-  resp <- curlGetResponse url [CurlHttpHeaders headers]
-  return $ filter ((/=) "" ) $ split "\n" $ respBody resp
+  --getContainers :: Authorization -> IO [Container]
+  getContainers auth = do
+    let Authorization (_, content_url, token) = auth
+    let headers = [ "X-Auth-Token: " ++ token ]
+    let url = content_url
+    resp <- curlGetResponse url [CurlHttpHeaders headers]
+    return $ filter ((/=) "" ) $ split "\n" $ respBody resp
 
-createContainer :: Authorization -> String -> IO Bool
-createContainer auth container_name = do
-  let Authorization (_, content_url, token) = auth
-  let headers = [ "X-Auth-Token: " ++ token ]
-  let url = content_url ++ "/" ++ container_name
-  resp <- curlGetResponse url [CurlHttpHeaders headers,
-                               CurlPut True]
-  return (respStatus resp == 201)
+  --createContainer :: Authorization -> String -> IO Bool
+  createContainer auth container_name = do
+    let Authorization (_, content_url, token) = auth
+    let headers = [ "X-Auth-Token: " ++ token ]
+    let url = content_url ++ "/" ++ container_name
+    resp <- curlGetResponse url [CurlHttpHeaders headers,
+                                 CurlPut True]
+    return (respStatus resp == 201)
 
-createFile :: Authorization -> Container -> String -> B.ByteString -> [(String, String)] -> IO Bool
-createFile auth container file_name file_contents meta_data = do
-  let Authorization (_, content_url, token) = auth
-  let md5_digest = show $ md5 file_contents
-  let headers = [ "X-Auth-Token: " ++ token,
-                  "ETag: " ++ md5_digest,
-                  "Content-Type: image/x-canon-cr2" ]
-                  ++ map formatMetaData meta_data
-  let url = content_url ++ "/" ++ container ++ "/" ++ file_name
-  state <- newIORef (0 :: Integer)
-  resp <- curlGetResponse url [CurlHttpHeaders headers,
-                               CurlPut True,
-                               CurlUpload True,
-                               CurlReadFunction $ readFunction file_contents state ]
-  return (respStatus resp == 201)
-  where formatMetaData (a,b) = ("X-Object-Meta-" ++ a ++ ": " ++ b)
+  --createFile :: Authorization -> Container -> String -> B.ByteString -> [(String, String)] -> IO Bool
+  createFile auth container file_name file_contents meta_data = do
+    let Authorization (_, content_url, token) = auth
+    let md5_digest = show $ md5 file_contents
+    let headers = [ "X-Auth-Token: " ++ token,
+                    "ETag: " ++ md5_digest,
+                    "Content-Type: image/x-canon-cr2" ]
+                    ++ map formatMetaData meta_data
+    let url = content_url ++ "/" ++ container ++ "/" ++ file_name
+    state <- newIORef (0 :: Integer)
+    resp <- curlGetResponse url [CurlHttpHeaders headers,
+                                 CurlPut True,
+                                 CurlUpload True,
+                                 CurlReadFunction $ readFunction file_contents state ]
+    return (respStatus resp == 201)
+    where formatMetaData (a,b) = ("X-Object-Meta-" ++ a ++ ": " ++ b)
 
-getFileList :: Authorization -> Container -> String -> IO [ String ]
-getFileList auth container path = do
-  let Authorization (_, content_url, token) = auth
-  let headers = [ "X-Auth-Token: " ++ token ]
-  let url = content_url ++ "/" ++ container ++ "?path=" ++ path
-  resp <- curlGetResponse url [CurlHttpHeaders headers]
-  let contents = respBody resp
-  return $ filter ((/=) "") $ split "\n" contents
+  --getFileList :: Authorization -> Container -> String -> IO [ String ]
+  getFileList auth container prefix = do
+    let Authorization (_, content_url, token) = auth
+    let headers = [ "X-Auth-Token: " ++ token ]
+    let url = content_url ++ "/" ++ container ++ "?path=" ++ prefix
+    resp <- curlGetResponse url [CurlHttpHeaders headers]
+    let contents = respBody resp
+    return $ filter ((/=) "") $ split "\n" contents
 
 -- Helper function for reading byte string into ptr.
 readFunction :: B.ByteString -> IORef Integer -> ReadFunction
