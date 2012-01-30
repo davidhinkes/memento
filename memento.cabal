@@ -24,6 +24,7 @@ Library
                  mtl,
                  utf8-string
   exposed-modules: Network.Rackspace.CloudAPI,
+                   Network.Rackspace.CloudAPI.IO,
                    Network.Rackspace.CloudAPI.Mock,
                    Graphics.CR2
   hs-source-dirs: src

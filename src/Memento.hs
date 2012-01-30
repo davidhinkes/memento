@@ -24,6 +24,7 @@ import Web.Authenticate.OpenId.Providers
 
 import Graphics.CR2
 import Network.Rackspace.CloudAPI
+import Network.Rackspace.CloudAPI.IO
 import Util
 
 staticFiles :: Snap ()
