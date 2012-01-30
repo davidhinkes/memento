@@ -41,8 +41,9 @@ container = "memento"
 
 archive :: CloudAPI m => String -> B.ByteString -> m ()
 archive id file_contents = do
-  let attrs = case (runGetLazy getCR2Attributes file_contents) of Right a -> a
-                                                                  _ -> []
+  let attrs = case (runGetLazy getCR2Attributes file_contents) of
+                Right a -> a
+                Left _ -> []
   let md5_digest = show $ md5 file_contents
   let cloud_name = id ++ "/" ++ md5_digest
   auth_token <- authIO

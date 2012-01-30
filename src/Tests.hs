@@ -18,14 +18,15 @@ t2 = TestCase (assertEqual "" str (lbs2s bs))
   where str = "my string"
         bs = (fromString str) :: LBS.ByteString
 
-archiveTest = TestCase $ assertBool (show s) (hasCorrectFile)
-  where c = archive "_id_" (fromString "test") :: Control.Monad.State.State FakeCloud ()
+archiveTest = TestCase $ assertBool "" (hasCorrectFile)
+  where c = archive "_id_" fileContents :: Control.Monad.State.State FakeCloud ()
         s = execState c Map.empty
-        hasCorrectContainer = Map.member "memento" s
-        hasCorrectFile = isJust $ do
+        fileContents = fromString "test" :: LBS.ByteString
+        hasCorrectFile = Just (fileContents, []) ==  do
           container <- Map.lookup "memento" s
           Map.lookup "_id_/098f6bcd4621d373cade4e832627b4f6" container
-    
+
+
 
 tests = TestList [TestLabel "bs2s test" t1,
                   TestLabel "lbs2s test" t2,

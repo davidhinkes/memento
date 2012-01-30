@@ -29,7 +29,7 @@ getCR2Endian = do
   case (lbs2s endian_indicator) of
     "II" -> return LittleEndian
     "MM" -> return BigEndian
-    _ -> error $ "Expected endian indicator.  Got: " ++ (show endian_indicator)
+    _ -> fail $ "Expected endian indicator.  Got: " ++ (show endian_indicator)
 
 getCR2RawOffset :: Endian -> Get Word32
 getCR2RawOffset endian = do
