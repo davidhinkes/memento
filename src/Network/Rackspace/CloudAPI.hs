@@ -1,5 +1,4 @@
-module Network.Rackspace.CloudAPI
-  (
+module Network.Rackspace.CloudAPI (
   Authorization(Authorization),
   CloudAPI,
   Container,
@@ -9,7 +8,7 @@ module Network.Rackspace.CloudAPI
   createContainer,
   createFile,
   getFileList,
-  ) where
+) where
 
 import qualified Data.ByteString.Lazy as B
 import Network.Curl
