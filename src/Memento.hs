@@ -55,7 +55,7 @@ archive id file_contents = do
       createFile token container cloud_name file_contents attrs
       return ()
 
-status :: String -> Snap ()
+status :: MonadSnap m => String -> m ()
 status who = do
   files <- liftIO status'
   modifyResponse $ setContentType (fromString "test/json")
